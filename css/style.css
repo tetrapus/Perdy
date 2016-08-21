@@ -1,0 +1,140 @@
+@import 'https://fonts.googleapis.com/css?family=Roboto+Condensed|Roboto+Mono';
+
+body {
+  background-color: #f0f0f0;
+}
+
+.table {
+  background-color: #e0e0e0;
+  display: inline-block;
+  box-shadow: 1px 1px 5px #888888;
+  position: absolute;
+  min-width: 150px;
+}
+
+.table * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+ }
+
+.table-column {
+  padding: 5px 25px 5px 10px;
+  font-family: 'Roboto Mono';
+  font-size: 13px;
+  position: relative;
+}
+
+.table-column:hover {
+  background: #f0f0f0;
+}
+
+.table-name {
+  padding: 5px 10px;
+  font-family: 'Roboto Condensed', sans-serif;
+  border-radius: 3px 3px 0px 0px;
+  color: white;
+  text-align: center;
+}
+
+.subscription .table-name {
+  background-color: #2196f3;
+}
+
+.fixture .table-name {
+  background-color: #212121;
+}
+
+.column-name {
+  display: inline-block;
+}
+
+.column-type {
+  display: inline-block;
+  position: absolute;
+  right: 4px;
+  top: 2px;
+  color: #555555;
+}
+
+.natural:after {
+  content: "ℕ";
+}
+
+.datetime:after {
+  content: "⌚";
+}
+
+.string:after {
+  content: 'Σ*';
+}
+
+.boolean:after {
+  content: "𝔹";
+}
+
+.numeric:after {
+  content: "ℚ";
+}
+
+.string {
+  font-family: 'arial';
+  padding-top: 3px;
+  margin-right: -2px;
+}
+
+.primary-key {
+  background-color: #0d47a1;
+}
+
+#connectors {
+  left: 0px;
+  top: 0px;
+  position: absolute;
+}
+
+#model-data {
+  position: fixed;
+  top: 0px;
+  right: -450px;
+  height: 100%;
+  width: 500px;
+  border: 0px;
+  color: #f0f0f0;
+  background-color: #111111;
+  z-index: 1;
+  font-family: 'Roboto Mono';
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+#model-data:hover {
+  transition: right 1s;
+  right: 0px;
+}
+
+#current-table {
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  background-color: #111111;
+  color: #ffffff;
+  margin: 10px;
+  border-radius: 3px;
+  box-shadow: 1px 1px 5px #888888;
+  font-family: 'Roboto Condensed';
+}
+
+#current-table input {
+  text-align: center;
+  border: 0px;
+  margin: 0px;
+  padding: 5px;
+}
+
+.current-table-name-label {
+  padding: 10px;
+}
