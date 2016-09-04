@@ -285,3 +285,37 @@ modelData.addEventListener("keyup", event => {
   load(newData.tables, newData.links);
   localStorage.setItem("erd-model", modelData.value);
 });
+
+document.getElementById("save").addEventListener('click', event => {
+  // find bounds of image
+  var min_x, max_x, min_y, max_y;
+  Array.from(document.querySelectorAll('.table')).forEach(table => {
+    if (min_x === undefined || min_x > table.offsetLeft) {
+      min_x = table.offsetLeft;
+    }
+    if (min_y === undefined || min_y > table.offsetTop) {
+      min_y = table.offsetTop;
+    }
+    if (max_x === undefined || max_x < table.offsetLeft + table.offsetWidth) {
+      max_x = table.offsetLeft + table.offsetWidth;
+    }
+    if (max_y === undefined || max_y < table.offsetTop + table.offsetHeight) {
+      max_y = table.offsetTop + table.offsetHeight;
+    }
+  });
+  const padding = 20;
+  html2canvas(document.getElementById("model"), {
+    onrendered: canvas => {
+      clipped = document.createElement('canvas');
+      clipped.width = max_x - min_x + 2 * padding;
+      clipped.height = max_y - min_y + 2 * padding;
+      var ctx = clipped.getContext("2d");
+      ctx.drawImage(canvas, -min_x + 20, -min_y + 20);
+      document.getElementById("save-contents").innerHTML = "";
+      document.getElementById("save-contents").appendChild(clipped);
+      document.getElementById("save-contents").classList.remove("hidden");
+    },
+    width: max_x + padding,
+    height: max_y + padding
+  });
+});
