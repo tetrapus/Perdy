@@ -3,26 +3,60 @@ linkDragEvent = null;
 
 const modelData = document.getElementById("model-data");
 
+var cumulativeOffset = function(element) {
+    var top = 0, left = 0;
+    do {
+        top += element.offsetTop  || 0;
+        left += element.offsetLeft || 0;
+        element = element.parentNode;
+    } while(element);
+
+    return {x: left, y: top};
+};
+
+function connect(from, to, color) {
+  if (from.x > to.x) {
+    var temp = from;
+    from = to;
+    to = temp;
+  }
+  const c = document.getElementById("connectors");
+  const ctx = c.getContext("2d");
+  const radius = 6;
+  const tangentY= (from.y > to.y)? -radius : radius;
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(from.x, from.y);
+  if (Math.abs(from.y - to.y) > 8) {
+    ctx.lineTo((from.x + to.x) / 2 - radius, from.y);
+    ctx.arcTo((from.x + to.x) / 2, from.y, (from.x + to.x) / 2, from.y + tangentY, radius);
+    ctx.lineTo((from.x + to.x) / 2, to.y - tangentY);
+    ctx.arcTo((from.x + to.x) / 2, to.y, (from.x + to.x) / 2 + radius, to.y, radius);
+    ctx.stroke();
+  }
+  ctx.lineTo(to.x, to.y);
+  ctx.stroke();
+}
+
 function load(tables, links) {
   model = document.getElementById("model");
   model.innerHTML = '';
   tables.forEach((def, tblidx) => {
     const columns = def.columns.map(
       (column, colidx) => `
-        <div class="table-column" data-column="${column.name}">
+        <div class="table-column" data-column="${colidx}">
           <div class="column-name"
             data-target="column-text"
-            contenteditable=true
-            data-bind="${tblidx}.columns.${colidx}.name">${column.name}</div>
+            contenteditable=true>${column.name}</div>
           <div class="column-type ${column.type}"></div>
         </div>`
     ); // todo: innertext
     const table = `
-      <div id="${def.id}" class="table ${def.class}">
+      <div id="${def.id}" class="table ${def.class}" data-table=${tblidx}>
         <div class="table-name"
           data-target="table-name-text"
-          contenteditable=true
-          data-bind="${tblidx}.name">${def.name}</div>
+          contenteditable=true>${def.name}</div>
         ${columns.join("\n")}
       </div>
     `;
@@ -40,66 +74,82 @@ function load(tables, links) {
     ${model.innerHTML}
   `;
 
-  Array.from(document.querySelectorAll('[data-bind]')).forEach(elem => {
-    elem.addEventListener("keyup", event => {
-      let target = elem.getAttribute("data-bind").split('.');
-      let model = tables;
-      const depth = target.length;
-      for (let i=0; i<depth - 1; i++) {
-        model = model[target.shift()];
+  function bindEditEvents(elem) {
+    elem.addEventListener("keydown", event => {
+      if (event.keyCode === 13) {
+        event.preventDefault();
+        event.stopPropagation();
       }
-      model[target[0]] = elem.innerHTML;
+    });
+
+    elem.addEventListener("keyup", event => {
+      console.log(event);
+      if (event.keyCode === 13) {
+        const column = document.createElement("div");
+        let table;
+        let idx = elem.parentNode.getAttribute('data-column');
+        if (idx === null) {
+          idx = 0;
+          table = elem.parentNode.getAttribute('data-table');
+        } else {
+          idx = parseInt(idx) + 1;
+          table = elem.parentNode.parentNode.getAttribute('data-table');
+        }
+        column.innerHTML = `
+          <div class="column-name"
+            data-target="column-text"
+            contenteditable=true></div>
+          <div class="column-type natural"></div>
+        `;
+        column.classList.add("table-column");
+        column.setAttribute('data-column', idx);
+        Array.from(column.querySelectorAll('[contenteditable=true]')).forEach(bindEditEvents);
+        tables[table].columns.splice(idx, 0, {
+          'name': '',
+          'type': 'natural'
+        });
+        const parent = document.querySelector(`.table[data-table="${table}"]`);
+        // Increment column index for all elems >= idx
+        Array.from(parent.querySelectorAll('[data-column]')).forEach(elem => {
+          const oldIdx = parseInt(elem.getAttribute('data-column'));
+          if (oldIdx >= idx) {
+            elem.setAttribute('data-column', oldIdx + 1);
+          }
+        });
+        links.forEach(link => {
+          if (link.from.table === table && link.from.column >= idx) {
+            link.from.column++;
+          } else if (link.to.table === table && link.to.column >= idx) {
+            link.to.column++;
+          }
+        });
+        parent.insertBefore(column, parent.querySelector(`[data-column="${idx+1}"]`));
+        column.querySelector('[contenteditable=true]').focus();
+      } else {
+        const column = elem.parentNode.getAttribute('data-column');
+        let model;
+        if (column !== null) {
+          model = tables[elem.parentNode.parentNode.getAttribute('data-table')].columns[column];
+        } else {
+          model = tables[elem.parentNode.getAttribute('data-table')];
+        }
+        model.name = elem.innerHTML;
+      }
       modelData.value = JSON.stringify({tables: tables, links: links}, null, '  ');
       localStorage.setItem("erd-model", modelData.value);
       redrawLinks();
     });
-  });
-
-  var cumulativeOffset = function(element) {
-      var top = 0, left = 0;
-      do {
-          top += element.offsetTop  || 0;
-          left += element.offsetLeft || 0;
-          element = element.parentNode;
-      } while(element);
-
-      return {x: left, y: top};
-  };
-
-  function connect(from, to, color) {
-    if (from.x > to.x) {
-      var temp = from;
-      from = to;
-      to = temp;
-    }
-    const c = document.getElementById("connectors");
-    const ctx = c.getContext("2d");
-    const radius = 6;
-    const tangentY= (from.y > to.y)? -radius : radius;
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(from.x, from.y);
-    if (Math.abs(from.y - to.y) > 8) {
-      ctx.lineTo((from.x + to.x) / 2 - radius, from.y);
-      ctx.arcTo((from.x + to.x) / 2, from.y, (from.x + to.x) / 2, from.y + tangentY, radius);
-      ctx.lineTo((from.x + to.x) / 2, to.y - tangentY);
-      ctx.arcTo((from.x + to.x) / 2, to.y, (from.x + to.x) / 2 + radius, to.y, radius);
-      ctx.stroke();
-    }
-    //ctx.setLineDash([5, 1]);
-    ctx.lineTo(to.x, to.y);
-    ctx.stroke();
-    //ctx.setLineDash([]);
   }
+
+  Array.from(document.querySelectorAll('[contenteditable=true]')).forEach(bindEditEvents);
 
   function redrawLinks() {
     const canvas = document.getElementById("connectors");
     const ctx = canvas.getContext("2d")
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     links.forEach(link => {
-      const fromEl = document.querySelector(link.from);
-      const toEl = document.querySelector(link.to);
+      const fromEl = document.querySelector(`[data-table="${link.from.table}"] [data-column="${link.from.column}"]`);
+      const toEl = document.querySelector(`[data-table="${link.to.table}"] [data-column="${link.to.column}"]`);
       let fromPos = cumulativeOffset(fromEl);
       // For the from pos, we want the left side
       fromPos.x += fromEl.offsetWidth;
@@ -178,9 +228,15 @@ function load(tables, links) {
         }
         if (target.classList.contains('table-column') && (target.parentNode.id !== linkDragEvent.target.parentNode.id)) {
           links.push({
-            from: `#${linkDragEvent.target.parentNode.id} [data-column=${linkDragEvent.target.getAttribute('data-column')}]`,
-            to: `#${target.parentNode.id} [data-column=${target.getAttribute('data-column')}]`,
-            color: "#888888",
+            from: {
+              table:linkDragEvent.target.parentNode.getAttribute('data-table'),
+              column: linkDragEvent.target.getAttribute('data-column')
+            },
+            to: {
+              table: target.parentNode.getAttribute('data-table'),
+              column: target.getAttribute('data-column')
+            },
+            color: "#888888"
           });
         }
         redrawLinks();
@@ -195,12 +251,12 @@ function load(tables, links) {
   document.body.addEventListener('mouseup', clearDragEvent);
   document.getElementById("connectors").addEventListener('dblclick', event => {
     let counter = 1;
-    while (document.getElementById(`membership-new-table-${counter}-table`) !== null) {
+    while (document.getElementById(`table-${counter}`) !== null) {
       counter++;
     }
     tables.push({
-      id: `membership-new-table-${counter}-table`,
-      name: `New Table ${counter}`,
+      id: `table-${counter}`,
+      name: `New Table`,
       class: "subscription",
       position: [event.clientX, event.clientY],
       columns: [
