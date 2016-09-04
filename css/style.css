@@ -12,18 +12,10 @@ body {
   min-width: 150px;
 }
 
-.table * {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
- }
 
 .table-column {
   padding: 5px 25px 5px 10px;
-  font-family: 'Roboto Mono';
+  font-family: 'Roboto Mono', monospace;
   font-size: 13px;
   position: relative;
 }
@@ -38,6 +30,23 @@ body {
   border-radius: 3px 3px 0px 0px;
   color: white;
   text-align: center;
+}
+
+.table-name-input {
+  border: 0px none;
+  font-size: 16px;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+
+.column-name-input {
+  border: 0px;
+  background-color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  border: inherit;
 }
 
 .subscription .table-name {
@@ -56,7 +65,7 @@ body {
   display: inline-block;
   position: absolute;
   right: 4px;
-  top: 2px;
+  top: 6px;
   color: #555555;
 }
 
@@ -81,8 +90,6 @@ body {
 }
 
 .string {
-  font-family: 'arial';
-  padding-top: 3px;
   margin-right: -2px;
 }
 
@@ -137,4 +144,12 @@ body {
 
 .current-table-name-label {
   padding: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+.virtual {
+  opacity: 0;
 }

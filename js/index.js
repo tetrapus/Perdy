@@ -6,17 +6,23 @@ const modelData = document.getElementById("model-data");
 function load(tables, links) {
   model = document.getElementById("model");
   model.innerHTML = '';
-  tables.forEach(def => {
+  tables.forEach((def, tblidx) => {
     const columns = def.columns.map(
-      column => `
+      (column, colidx) => `
         <div class="table-column" data-column="${column.name}">
-          <div class="column-name">${column.name}</div>
+          <div class="column-name"
+            data-target="column-text"
+            contenteditable=true
+            data-bind="${tblidx}.columns.${colidx}.name">${column.name}</div>
           <div class="column-type ${column.type}"></div>
         </div>`
-    );
+    ); // todo: innertext
     const table = `
       <div id="${def.id}" class="table ${def.class}">
-        <div class="table-name">${def.name}</div>
+        <div class="table-name"
+          data-target="table-name-text"
+          contenteditable=true
+          data-bind="${tblidx}.name">${def.name}</div>
         ${columns.join("\n")}
       </div>
     `;
@@ -33,6 +39,21 @@ function load(tables, links) {
     <canvas id="connectors" width="${window.innerWidth}px" height="${window.innerHeight}px"></canvas>
     ${model.innerHTML}
   `;
+
+  Array.from(document.querySelectorAll('[data-bind]')).forEach(elem => {
+    elem.addEventListener("keyup", event => {
+      let target = elem.getAttribute("data-bind").split('.');
+      let model = tables;
+      const depth = target.length;
+      for (let i=0; i<depth - 1; i++) {
+        model = model[target.shift()];
+      }
+      model[target[0]] = elem.innerHTML;
+      modelData.value = JSON.stringify({tables: tables, links: links}, null, '  ');
+      localStorage.setItem("erd-model", modelData.value);
+      redrawLinks();
+    });
+  });
 
   var cumulativeOffset = function(element) {
       var top = 0, left = 0;
